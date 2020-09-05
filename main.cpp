@@ -69,12 +69,50 @@ std::string newNick(
     return beginning() + middle() + std::to_string(final());
 }
 
-int main() {
-    std::vector<std::string> beginningStrings = getFromFile("beginning");
+/// Taken from https://stackoverflow.com/questions/865668/how-to-parse-command-line-arguments-in-c/868894#868894
+class InputParser{
+public:
+    InputParser (int &argc, char **argv){
+        for (int i=1; i < argc; ++i)
+            this->tokens.push_back(std::string(argv[i]));
+    }
+    /// @author iain
+    const std::string& getCmdOption(const std::string &option) const{
+        std::vector<std::string>::const_iterator itr;
+        itr =  std::find(this->tokens.begin(), this->tokens.end(), option);
+        if (itr != this->tokens.end() && ++itr != this->tokens.end()){
+            return *itr;
+        }
+        static const std::string empty_string("");
+        return empty_string;
+    }
+    /// @author iain
+    bool cmdOptionExists(const std::string &option) const{
+        return std::find(this->tokens.begin(), this->tokens.end(), option)
+               != this->tokens.end();
+    }
+private:
+    std::vector <std::string> tokens;
+};
+
+int main(int argc, char **argv) {
+
+    std::vector<std::string> beginningStrings;
+    std::vector<std::string> middleStrings;
+
+    InputParser parser(argc, argv);
+
+    if (parser.cmdOptionExists("--one-dict") || parser.cmdOptionExists("-o") ) {
+        beginningStrings = getFromFile("dictionary");
+        middleStrings = beginningStrings;
+    } else {
+        beginningStrings = getFromFile("beginning");
+        middleStrings = getFromFile("middle");
+    }
+
     std::function<int()> beginningGenerator = randomEngine(0, beginningStrings.size() - 1);
     std::function<std::string()> beginning = stringGeneratorFunction(beginningGenerator, beginningStrings);
 
-    std::vector<std::string> middleStrings = getFromFile("middle");
     std::function<int()> middleGenerator = randomEngine(0, middleStrings.size() - 1);
     std::function<std::string()> middle = stringGeneratorFunction(middleGenerator, middleStrings);
 
@@ -106,7 +144,7 @@ int main() {
         }
 
 
-        for (const auto& nick :nicks) {
+        for (const auto &nick :nicks) {
             result << nick + "\n";
         }
 
